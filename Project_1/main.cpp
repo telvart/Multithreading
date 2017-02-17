@@ -6,6 +6,12 @@
 #include "Barrier.h"
 #include "Train.h"
 
+struct track
+{
+  int station1;
+  int station2;
+};
+
 std::mutex coutMutex;
 bool timetoExecute = false;
 Barrier* b = new Barrier();
@@ -13,7 +19,7 @@ Barrier* b = new Barrier();
 void trainThread(int trainNumber, Train* myTrain, int numTrains, int maxStops)
 {
   int timeStep = 0;
-  while(!timetoExecute);
+  while(!timetoExecute); //wait until given the go signal
   while(timeStep != maxStops)//!myTrain->routeFinshed())
   {
     if(!myTrain->routeFinshed())
