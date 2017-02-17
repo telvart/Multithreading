@@ -15,6 +15,40 @@ struct track
 std::mutex coutMutex;
 bool timetoExecute = false;
 Barrier* b = new Barrier();
+track** tracks;
+
+bool compareTracks(track* t1, track* t2)
+{
+  return (t1->station1 + t1->station2) == (t2->station1 + t2->station2);
+}
+
+void clearTracks(int numTrains)
+{
+  for(int i=0; i<numTrains; i++)
+  {
+    if(tracks[i] != nullptr)
+    {
+      delete tracks[i];
+      tracks[i] = nullptr;
+    }
+  }
+}
+
+bool safetoAdvance(track* t, int numTrains, int trainNumber)
+{
+  for(int i=0; i<numTrains; i++)
+  {
+    if(tracks[i] != nullptr && i != trainNumber)
+    {
+      if(compareTracks(tracks[i], t))
+      {
+        return false;
+      }
+    }
+
+  }
+  return true;
+}
 
 void trainThread(int trainNumber, Train* myTrain, int numTrains, int maxStops)
 {
@@ -22,16 +56,36 @@ void trainThread(int trainNumber, Train* myTrain, int numTrains, int maxStops)
   while(!timetoExecute); //wait until given the go signal
   while(timeStep != maxStops)//!myTrain->routeFinshed())
   {
+    // if(trainNumber == 0)
+    // {
+    //   std::cout<<myTrain->getCurrentStation()<<" "<<myTrain->getNextStation()<<"\n";
+    // }
     if(!myTrain->routeFinshed())
     {
+
+      track* t = new track;
+      t->station1=myTrain->getCurrentStation();
+      t->station2=myTrain->getNextStation();
       coutMutex.lock();
-       std::cout<<"At timestep "<<timeStep<<", train " <<trainNumber
-                <<" is going from "<<myTrain->getCurrentStation()
-                <<" to station "<<myTrain->getNextStation()<<"\n";
+      tracks[trainNumber]=t;
+
+      if(safetoAdvance(t,numTrains,trainNumber))
+      {
+        std::cout<<"At timestep "<<timeStep<<", train " <<trainNumber
+                 <<" is going from "<<myTrain->getCurrentStation()
+                 <<" to station "<<myTrain->getNextStation()<<"\n";
+                 myTrain->advanceStation();
+      }
+      else
+      {
+        std::cout<<"At timestep "<<timeStep<<", train " <<trainNumber<<" is staying at station "<<myTrain->getCurrentStation()<<"\n";
+      }
       coutMutex.unlock();
-      myTrain->advanceStation();
+
     }
     timeStep++;
+    b->barrier(numTrains);
+    clearTracks(numTrains);
     b->barrier(numTrains);
   }
 
@@ -39,7 +93,6 @@ void trainThread(int trainNumber, Train* myTrain, int numTrains, int maxStops)
 
 int main(int argc, char** argv)
 {
-
   int numTrains;
   int numStations;
   int numStops;
@@ -49,6 +102,11 @@ int main(int argc, char** argv)
   fileIn>>numTrains;
   fileIn>>numStations;
   Train** theTrains = new Train*[numTrains];
+  tracks = new track*[numTrains];
+  for(int i=0; i<numTrains; i++)
+  {
+    tracks[i]=nullptr;
+  }
 
   for(int i=0; i<numTrains; i++)
   {

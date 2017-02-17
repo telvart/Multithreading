@@ -23,7 +23,7 @@ void Train::printSchedule()
 
 bool Train::routeFinshed()
 {
-  return m_amDone;
+  return m_scheduleIndex >= m_numStops;
 }
 
 int Train::getCurrentStation()
