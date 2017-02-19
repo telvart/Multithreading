@@ -131,6 +131,10 @@ int main(int argc, char** argv)
     t[i]->join();
   }
   std::cout<<"Simulation complete. Exiting...\n\n";
+  for(int i=0; i<numTrains; i++)
+  {
+    delete t[i];
+  }
 
   delete b;
   delete[] tracks;
