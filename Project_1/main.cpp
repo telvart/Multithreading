@@ -135,9 +135,14 @@ int main(int argc, char** argv)
   {
     delete t[i];
   }
+  for(int i=0; i<numTrains; i++)
+  {
+    delete theTrains[i];
+  }
 
   delete b;
   delete[] tracks;
   delete[] t;
+  delete[] theTrains;
   return 0;
 }
