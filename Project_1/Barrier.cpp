@@ -11,9 +11,15 @@ Barrier::~Barrier()
 
 }
 
+void Barrier::releaseBarrier()
+{
+  barrierCV.notify_all();
+}
+
 void Barrier::barrier(int numExpectedAtBarrier)
 {
 	std::unique_lock<std::mutex> ulbm(barrierMutex);
+  numExpected = numExpectedAtBarrier;
 
 	barrierCounter++;
 	if (barrierCounter != numExpectedAtBarrier)

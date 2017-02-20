@@ -20,6 +20,7 @@ int numTrains;
 int numStations;
 int numStops;
 int maxStops;
+int numDone;
 char chars[] = {'A','B','C','D','E','F','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'};
 
 bool compareTracks(track* t1, track* t2)
@@ -58,10 +59,10 @@ void trainThread(int trainNumber, Train* myTrain)
 {
   int timeStep = 0;
   while(!timetoExecute); //wait until given the go signal
-  while(!myTrain->routeFinshed())//timeStep != maxStops + 1)//!myTrain->routeFinshed())
+  while(!myTrain->routeFinshed())//timeStep != maxStops + 1)//!myTrain->routeFinshed())//timeStep != maxStops + 1)//!myTrain->routeFinshed())
   {
-    // if(!myTrain->routeFinshed())
-    // {
+     if(!myTrain->routeFinshed())
+     {
       track* t = new track;
       t->station1=myTrain->getCurrentStation();
       t->station2=myTrain->getNextStation();
@@ -78,22 +79,31 @@ void trainThread(int trainNumber, Train* myTrain)
       {
         std::cout<<"At time step: "<<timeStep<<" train " <<chars[trainNumber]<<" must stay at station "<<myTrain->getCurrentStation()<<"\n";
       }
-      //trainMutex.unlock();
-  //  }
-      if(myTrain->routeFinshed())
-      {
-        numTrains--;
-      }
+    }
+
     trainMutex.unlock();
     timeStep++;
     b->barrier(numTrains);
     clearTracks();
     b->barrier(numTrains);
   }
-
-  trainMutex.lock();
-  numTrains--;
-  trainMutex.unlock();
+  //trainMutex.unlock();
+  numDone++;
+  // std::cout<<"numDone: "<<numDone<<"\n";
+  // std::cout<<"numTrains: "<<numTrains<<"\n";
+//  trainMutex.unlock();
+  if(numDone == numTrains)
+  {
+    b->releaseBarrier();
+  }
+  while(numDone < numTrains)
+  {
+    // if(numDone == numTrains)
+    // {
+    //   b->releaseBarrier();
+    // }
+    b->barrier(numTrains);
+  }
 }
 
 int main(int argc, char** argv)

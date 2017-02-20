@@ -31,10 +31,12 @@ public:
 	Barrier();
 	virtual ~Barrier();
 
+	void releaseBarrier();
 	void barrier(int numExpectedAtBarrier);
 
-private:
+//private:
 	int barrierCounter;
+	int numExpected;
 	std::mutex barrierMutex;
 	std::condition_variable barrierCV;
 };
