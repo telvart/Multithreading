@@ -18,8 +18,6 @@ Barrier* b = new Barrier();
 track** tracks;
 int numTrains;
 int numStations;
-int numStops;
-int maxStops;
 int numDone;
 char chars[] = {'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'};
 
@@ -119,6 +117,7 @@ int main(int argc, char** argv)
     return 0;
   }
 
+  int numStops;
   fileIn>>numTrains;
   fileIn>>numStations;
   Train** theTrains = new Train*[numTrains];
@@ -136,10 +135,6 @@ int main(int argc, char** argv)
     for(int j=1; j<=numStops; j++)
     {
       fileIn>>theTrains[i]->m_schedule[j-1];
-      if(j > maxStops)
-      {
-        maxStops = j;
-      }
     }
   }
   fileIn.close();

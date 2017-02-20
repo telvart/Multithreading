@@ -36,7 +36,6 @@ public:
 
 //private:
 	int barrierCounter;
-	int numExpected;
 	std::mutex barrierMutex;
 	std::condition_variable barrierCV;
 };
