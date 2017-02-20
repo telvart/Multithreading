@@ -7,7 +7,7 @@ main.o: main.cpp Train.h
 Barrier.o: Barrier.cpp Barrier.h
 	g++ -g -Wall -std=c++11 -c Barrier.cpp
 
-Train.o: Train.h Train.cpp
+Train.o: Train.cpp Train.h
 	g++ -g -Wall -std=c++11 -c Train.cpp
 
 clean:

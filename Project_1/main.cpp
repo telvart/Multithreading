@@ -20,6 +20,7 @@ int numTrains;
 int numStations;
 int numStops;
 int maxStops;
+char chars[] = {'A','B','C','D','E','F','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'};
 
 bool compareTracks(track* t1, track* t2)
 {
@@ -59,7 +60,7 @@ void trainThread(int trainNumber, Train* myTrain)
   while(!timetoExecute); //wait until given the go signal
   while(timeStep != maxStops + 1)//!myTrain->routeFinshed())
   {
-    if(!myTrain->routeFinshed()) 
+    if(!myTrain->routeFinshed())
     {
       track* t = new track;
       t->station1=myTrain->getCurrentStation();
