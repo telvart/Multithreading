@@ -58,10 +58,10 @@ void trainThread(int trainNumber, Train* myTrain)
 {
   int timeStep = 0;
   while(!timetoExecute); //wait until given the go signal
-  while(timeStep != maxStops + 1)//!myTrain->routeFinshed())
+  while(!myTrain->routeFinshed())//timeStep != maxStops + 1)//!myTrain->routeFinshed())
   {
-    if(!myTrain->routeFinshed())
-    {
+    // if(!myTrain->routeFinshed())
+    // {
       track* t = new track;
       t->station1=myTrain->getCurrentStation();
       t->station2=myTrain->getNextStation();
@@ -69,22 +69,31 @@ void trainThread(int trainNumber, Train* myTrain)
       tracks[trainNumber]=t;
       if(safetoAdvance(t,trainNumber))
       {
-        std::cout<<"At time step: "<<timeStep<<" train " <<trainNumber
+        std::cout<<"At time step: "<<timeStep<<" train " <<chars[trainNumber]
                  <<" is going from station "<<myTrain->getCurrentStation()
                  <<" to station "<<myTrain->getNextStation()<<"\n";
                  myTrain->advanceStation();
       }
       else
       {
-        std::cout<<"At time step: "<<timeStep<<" train " <<trainNumber<<" must stay at station "<<myTrain->getCurrentStation()<<"\n";
+        std::cout<<"At time step: "<<timeStep<<" train " <<chars[trainNumber]<<" must stay at station "<<myTrain->getCurrentStation()<<"\n";
       }
-      trainMutex.unlock();
-    }
+      //trainMutex.unlock();
+  //  }
+      if(myTrain->routeFinshed())
+      {
+        numTrains--;
+      }
+    trainMutex.unlock();
     timeStep++;
     b->barrier(numTrains);
     clearTracks();
     b->barrier(numTrains);
   }
+
+  trainMutex.lock();
+  numTrains--;
+  trainMutex.unlock();
 }
 
 int main(int argc, char** argv)
