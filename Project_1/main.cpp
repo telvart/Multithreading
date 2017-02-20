@@ -21,7 +21,7 @@ int numStations;
 int numStops;
 int maxStops;
 int numDone;
-char chars[] = {'A','B','C','D','E','F','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'};
+char chars[] = {'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'};
 
 bool compareTracks(track* t1, track* t2)
 {
@@ -58,8 +58,8 @@ bool safetoAdvance(track* t, int trainNumber)
 void trainThread(int trainNumber, Train* myTrain)
 {
   int timeStep = 0;
-  while(!timetoExecute); //wait until given the go signal
-  while(!myTrain->routeFinshed())//timeStep != maxStops + 1)//!myTrain->routeFinshed())//timeStep != maxStops + 1)//!myTrain->routeFinshed())
+  while(!timetoExecute);
+  while(!myTrain->routeFinshed())
   {
      if(!myTrain->routeFinshed())
      {
@@ -77,7 +77,8 @@ void trainThread(int trainNumber, Train* myTrain)
       }
       else
       {
-        std::cout<<"At time step: "<<timeStep<<" train " <<chars[trainNumber]<<" must stay at station "<<myTrain->getCurrentStation()<<"\n";
+        std::cout<<"At time step: "<<timeStep<<" train " <<chars[trainNumber]
+                 <<" must stay at station "<<myTrain->getCurrentStation()<<"\n";
       }
     }
 
@@ -87,21 +88,17 @@ void trainThread(int trainNumber, Train* myTrain)
     clearTracks();
     b->barrier(numTrains);
   }
-  //trainMutex.unlock();
+
+  trainMutex.lock();
   numDone++;
-  // std::cout<<"numDone: "<<numDone<<"\n";
-  // std::cout<<"numTrains: "<<numTrains<<"\n";
-//  trainMutex.unlock();
+  trainMutex.unlock();
+  // at this point, the thread is finished and will wait for the others
   if(numDone == numTrains)
   {
     b->releaseBarrier();
   }
   while(numDone < numTrains)
   {
-    // if(numDone == numTrains)
-    // {
-    //   b->releaseBarrier();
-    // }
     b->barrier(numTrains);
   }
 }
@@ -160,6 +157,7 @@ int main(int argc, char** argv)
   {
     t[i].join();
   }
+
   std::cout<<"Simulation complete. Exiting...\n\n";
 
   for(int i=0; i<numTrains; i++)
