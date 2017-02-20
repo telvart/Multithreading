@@ -19,7 +19,7 @@ track** tracks;
 int numTrains;
 int numStations;
 int numStops;
-int maxStops = 0;
+int maxStops;
 
 bool compareTracks(track* t1, track* t2)
 {
@@ -59,45 +59,54 @@ void trainThread(int trainNumber, Train* myTrain)
   while(!timetoExecute); //wait until given the go signal
   while(timeStep != maxStops + 1)//!myTrain->routeFinshed())
   {
-    if(!myTrain->routeFinshed())
+    if(!myTrain->routeFinshed()) 
     {
-
       track* t = new track;
       t->station1=myTrain->getCurrentStation();
       t->station2=myTrain->getNextStation();
       trainMutex.lock();
       tracks[trainNumber]=t;
-
       if(safetoAdvance(t,trainNumber))
       {
-        std::cout<<"At timestep "<<timeStep<<", train " <<trainNumber
-                 <<" is going from "<<myTrain->getCurrentStation()
+        std::cout<<"At time step: "<<timeStep<<" train " <<trainNumber
+                 <<" is going from station "<<myTrain->getCurrentStation()
                  <<" to station "<<myTrain->getNextStation()<<"\n";
                  myTrain->advanceStation();
       }
       else
       {
-        std::cout<<"At timestep "<<timeStep<<", train " <<trainNumber<<" is staying at station "<<myTrain->getCurrentStation()<<"\n";
+        std::cout<<"At time step: "<<timeStep<<" train " <<trainNumber<<" must stay at station "<<myTrain->getCurrentStation()<<"\n";
       }
       trainMutex.unlock();
-
     }
     timeStep++;
     b->barrier(numTrains);
     clearTracks();
     b->barrier(numTrains);
   }
-
 }
 
 int main(int argc, char** argv)
 {
+  if(argc < 2)
+  {
+    std::cout<<"Usage: ./project1 <fileName>\n";
+    return 0;
+  }
 
-  std::ifstream fileIn("schedules.txt");
+  std::ifstream fileIn(argv[1]);
+
+  if(!fileIn.is_open())
+  {
+    std::cout<<"The file you entered was unable to be opened. Please try again\n";
+    return 0;
+  }
+
   fileIn>>numTrains;
   fileIn>>numStations;
   Train** theTrains = new Train*[numTrains];
   tracks = new track*[numTrains];
+
   for(int i=0; i<numTrains; i++)
   {
     tracks[i]=nullptr;
@@ -118,23 +127,21 @@ int main(int argc, char** argv)
   }
   fileIn.close();
 
-  std::thread** t = new std::thread*[numTrains];
+  std::thread* t = new std::thread[numTrains];
   for(int i=0; i<numTrains; i++)
   {
-    t[i] = new std::thread(trainThread, i, theTrains[i]);
+    t[i] = std::thread(trainThread, i, theTrains[i]);
   }
 
+  std::cout<<"Starting simulation...\n";
   timetoExecute = true;
 
   for(int i=0; i<numTrains; i++)
   {
-    t[i]->join();
+    t[i].join();
   }
   std::cout<<"Simulation complete. Exiting...\n\n";
-  for(int i=0; i<numTrains; i++)
-  {
-    delete t[i];
-  }
+
   for(int i=0; i<numTrains; i++)
   {
     delete theTrains[i];
