@@ -1,5 +1,6 @@
 
 #include <iostream>
+#include <fstream>
 #include <string>
 
 std::string columnLetters[] =
@@ -10,9 +11,11 @@ std::string columnLetters[] =
  "DA","DB","DC","DD","DE","DF","DG","DH","DI","DJ","DK","DL","DM","DN","DO","DP","DQ","DR","DS","DT","DU","DV","DW","DX","DY","DZ"};
 
 
-
 int main(int argc, char** argv)
 {
-
+  std::ifstream fileIn("500_Cities__City-level_Data__GIS_Friendly_Format_.csv");
+  std::string test;
+  std::getline(fileIn,test);
+  std::cout<<test<<"\n";
   std::cout<<4*26;
 }
