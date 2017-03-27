@@ -8,9 +8,9 @@
 
 std::string columnLetters[] =
 {"A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z",
- "AA","AB","AC","AD","AE","AF","AG","AH","AI","AJ","AK","AL","AM","AN","AO","AP","AQ","AR","AS","AT","AU","AV","AW","AX","AY","AZ"
- "BA","BB","BC","BD","BE","BF","BG","BH","BI","BJ","BK","BL","BM","BN","BO","BP","BQ","BR","BS","BT","BU","BV","BW","BX","BY","BZ"
- "CA","CB","CC","CD","CE","CF","CG","CH","CI","CJ","CK","CL","CM","CN","CO","CP","BQ","CR","CS","CT","CU","CV","CW","CX","CY","CZ"
+ "AA","AB","AC","AD","AE","AF","AG","AH","AI","AJ","AK","AL","AM","AN","AO","AP","AQ","AR","AS","AT","AU","AV","AW","AX","AY","AZ",
+ "BA","BB","BC","BD","BE","BF","BG","BH","BI","BJ","BK","BL","BM","BN","BO","BP","BQ","BR","BS","BT","BU","BV","BW","BX","BY","BZ",
+ "CA","CB","CC","CD","CE","CF","CG","CH","CI","CJ","CK","CL","CM","CN","CO","CP","BQ","CR","CS","CT","CU","CV","CW","CX","CY","CZ",
  "DA","DB","DC","DD","DE","DF","DG","DH","DI","DJ","DK","DL","DM"};
 
 std::string** getDataFromFile(std::string fileName)
@@ -92,7 +92,7 @@ double* columnByLetter(std::string colLetter)
   }
   return nullptr;
 }
-std::string curMode, curOp, column;
+std::string curMode, curOp, subOp, column;
 std::string* rowByNumber(double val)
 {
   for(int i=1; i<501; i++)
@@ -145,7 +145,6 @@ bool validateParameters(int argc, char** argv, int processes)
 
 int main(int argc, char** argv)
 {
-
   MPI_Init(&argc, &argv);
 
   int rank, communicatorSize;
@@ -160,9 +159,9 @@ int main(int argc, char** argv)
     double* mySection = new double[numMessages];
     double processResults; //= new double[numMessages];
     double localResult;
+    double valChecking;
 
     MPI_Scatter(workingColumn, numMessages, MPI_DOUBLE, mySection, numMessages, MPI_DOUBLE, 0, MPI_COMM_WORLD );
-
 
     if (curOp == "max")
     {
@@ -187,46 +186,69 @@ int main(int argc, char** argv)
     {
       localResult = 0;
       for(int i=0; i<numMessages; i++) {localResult += mySection[i];}
-      // std::cout<<"\n"<<localResult;
 
       MPI_Reduce(&localResult, &processResults, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
-
     }
-
-
-
-
-
-
-
-    if(rank == 0)
+    else
     {
-      //std::string* row = rowByNumber(processResults);
-
-      if(curOp == "avg")
+      subOp = argv[4];
+      valChecking = atof(argv[5]);
+      if(subOp == "gt")
       {
-        //std::cout<<row[1]<<", "<<row[0]<<", "<<theData[0][convertLetter(column)]<<" = ";
-        processResults /= (double)500;
-        std::cout<<"Average "<<theData[0][convertLetter(column)]<<" = ";
-        std::cout<<std::fixed<<std::setprecision(3)<<processResults<<"\n";
+        localResult = 0;
+        for(int i=0; i<numMessages; i++)
+        {
+          if(mySection[i] > valChecking)
+          {
+            localResult++;
+          }
+        }
       }
       else
       {
-        //std::cout<<row[1]<<", "<<row[0]<<", "<<theData[0][convertLetter(column)]<<" = ";
-        std::cout<<std::fixed<<std::setprecision(3)<<processResults<<"\n";
+        localResult = 0;
+        for(int i=0; i<numMessages; i++)
+        {
+          if(mySection[i] < valChecking)
+          {
+            localResult++;
+          }
+        }
       }
+      MPI_Reduce(&localResult, &processResults, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    }
 
-
+    if(rank == 0)
+    {
+      if(curOp == "avg")
+      {
+        processResults /= (double)500;
+        std::cout<<"Average "<<theData[0][convertLetter(column)]<<" = "
+                 <<std::fixed<<std::setprecision(3)<<processResults<<"\n";
+      }
+      else if(curOp == "number")
+      {
+        std::cout<<"Number cities with "<<theData[0][convertLetter(column)]
+                 <<" "<<subOp<<" "<<valChecking<<" = "
+                 <<std::fixed<<std::setprecision(3)<<processResults<<"\n";
+      }
+      else
+      {
+        std::string* row = rowByNumber(processResults);
+        std::cout<<row[1]<<", "<<row[0]<<", "<<theData[0][convertLetter(column)]<<" = "
+                 <<std::fixed<<std::setprecision(3)<<processResults<<"\n";
+      }
     }
   }
 
-  else
+  else //BG
   {
 
   }
 
   MPI_Finalize();
-}
+  return 0;
+ }
 
 
 
