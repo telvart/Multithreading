@@ -1,8 +1,8 @@
-project2: main.o DataSet.o
-	g++ -g -Wall -std=c++11 -o project2 main.o DataSet.o
+
+project2: main.o
+	mpic++ -g -Wall -std=c++11 -o project2 main.o
 main.o: main.cpp
-	g++ -g -Wall -std=c++11 -c main.cpp
-DataSet.o: DataSet.cpp DataSet.h
-	g++ -g -Wall -std=c++11 -c DataSet.cpp
+	mpic++ -g -Wall -std=c++11 -c main.cpp
+
 clean:
 	rm *.o project2
