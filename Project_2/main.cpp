@@ -3,6 +3,7 @@
 #include <fstream>
 #include <unistd.h>
 #include <stdlib.h>
+#include <iomanip>
 #include <mpi.h>
 
 std::string columnLetters[] =
@@ -91,8 +92,21 @@ double* columnByLetter(std::string colLetter)
   }
   return nullptr;
 }
-
 std::string curMode, curOp, column;
+std::string* rowByNumber(double val)
+{
+  for(int i=1; i<501; i++)
+  {
+    if (atof(theData[i][convertLetter(column)].c_str())  == val)
+    {
+      return theData[i];
+    }
+  }
+  return nullptr;
+
+}
+
+
 
 
 bool validateParameters(int argc, char** argv, int processes)
@@ -141,30 +155,74 @@ int main(int argc, char** argv)
 
   if(curMode == "sr")
   {
+    int numMessages = 500/communicatorSize;
+    double* workingColumn = columnByLetter(argv[3]);
+    double* mySection = new double[numMessages];
+    double processResults; //= new double[numMessages];
+    double localResult;
 
-    if (rank == 0)
+    MPI_Scatter(workingColumn, numMessages, MPI_DOUBLE, mySection, numMessages, MPI_DOUBLE, 0, MPI_COMM_WORLD );
+
+
+    if (curOp == "max")
     {
-      double* workingColumn = columnByLetter(argv[3]);
-      int numMessages = 500/communicatorSize;
-      MPI_Scatter(workingColumn, numMessages, MPI_DOUBLE,
-         MPI_IN_PLACE, 0, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+      localResult = mySection[0];
+      for(int i=0; i<numMessages; i++)
+      {
+        if(mySection[i] > localResult) {localResult = mySection[i];}
+      }
+
+      MPI_Reduce(&localResult, &processResults, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+    }
+    else if(curOp == "min")
+    {
+      localResult = mySection[0];
+      for(int i=0; i<numMessages; i++)
+      {
+        if(mySection[i] < localResult) {localResult = mySection[i];}
+      }
+      MPI_Reduce(&localResult, &processResults, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+    }
+    else if(curOp == "avg")
+    {
+      localResult = 0;
+      for(int i=0; i<numMessages; i++) {localResult += mySection[i];}
+      // std::cout<<"\n"<<localResult;
+
+      MPI_Reduce(&localResult, &processResults, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
 
     }
-    else
+
+
+
+
+
+
+
+    if(rank == 0)
     {
+      //std::string* row = rowByNumber(processResults);
+
+      if(curOp == "avg")
+      {
+        //std::cout<<row[1]<<", "<<row[0]<<", "<<theData[0][convertLetter(column)]<<" = ";
+        processResults /= (double)500;
+        std::cout<<"Average "<<theData[0][convertLetter(column)]<<" = ";
+        std::cout<<std::fixed<<std::setprecision(3)<<processResults<<"\n";
+      }
+      else
+      {
+        //std::cout<<row[1]<<", "<<row[0]<<", "<<theData[0][convertLetter(column)]<<" = ";
+        std::cout<<std::fixed<<std::setprecision(3)<<processResults<<"\n";
+      }
+
 
     }
   }
+
   else
   {
-    if(rank == 0)
-    {
 
-    }
-    else
-    {
-
-    }
   }
 
   MPI_Finalize();
