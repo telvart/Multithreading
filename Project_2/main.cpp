@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <unistd.h>
+#include <stdlib.h>
 #include <mpi.h>
 
 std::string columnLetters[] =
@@ -76,41 +77,94 @@ int convertLetter(std::string letter)
   return -1;
 }
 
-std::string* columnByLetter(std::string colLetter)
+double* columnByLetter(std::string colLetter)
 {
   int index;
   if((index = convertLetter(colLetter)) != -1)
   {
-    std::string* s = new std::string[500];
+    double* s = new double[500];
     for(int i=1; i<501; i++)
     {
-      s[i-1] = theData[i][index];
+      s[i-1] = atof(theData[i][index].c_str());
     }
     return s;
   }
   return nullptr;
 }
 
-int main(int argc, char** argv)
+std::string curMode, curOp, column;
+
+
+bool validateParameters(int argc, char** argv, int processes)
 {
-
-  MPI_Init(&argc, &argv);
-  int rank, communicatorSize;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  MPI_Comm_size(MPI_COMM_WORLD, &communicatorSize);
-
-  if(rank == 0)
+  curMode = argv[1];
+  curOp = argv[2];
+  if(curMode == "sr")
   {
-    std::string* col = columnByLetter("F");
-    for(int i=0; i<500; i++)
+    if(500 % processes != 0)
     {
-      std::cout<<col[i]<<"\n";
-      usleep(100000);
+      std::cout<<"The number of processes did not divide evenly into 500!\n";
+      return false;
+    }
+    column = argv[3];
+  }
+  else if (curMode == "bg")
+  {
+    int cols = 0;
+    for(int i=3; i<argc; i++) {cols++;}
+
+    if(cols != processes)
+    {
+      std::cout<<"The number of columns did not match the number of processes!\n";
+      return false;
     }
   }
   else
   {
+    std::cout<<"Invalid scheme selected!\n";
+    return false;
+  }
+  return true;
+}
 
+
+
+int main(int argc, char** argv)
+{
+
+  MPI_Init(&argc, &argv);
+
+  int rank, communicatorSize;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &communicatorSize);
+  if(!validateParameters(argc, argv, communicatorSize)) {return 0;}
+
+  if(curMode == "sr")
+  {
+
+    if (rank == 0)
+    {
+      double* workingColumn = columnByLetter(argv[3]);
+      int numMessages = 500/communicatorSize;
+      MPI_Scatter(workingColumn, numMessages, MPI_DOUBLE,
+         MPI_IN_PLACE, 0, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+    }
+    else
+    {
+
+    }
+  }
+  else
+  {
+    if(rank == 0)
+    {
+
+    }
+    else
+    {
+
+    }
   }
 
   MPI_Finalize();
