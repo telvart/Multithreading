@@ -1,0 +1,3 @@
+5 125.30418 143.40811 159.21133 167.30901 177.53123
+3751 6537
+/home/miller/public_html/Courses/690MulticoreAndGPGPU/Spring2017/Projects/Project3Data/ElevationData/KansasMissouri/6-1242887998.flt

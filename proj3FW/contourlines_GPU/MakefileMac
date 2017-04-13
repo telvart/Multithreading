@@ -1,0 +1,30 @@
+CPP = g++ -std=c++11
+INC = -I/usr/local/include -I../cryphutil -I../glslutil -I../mvcutil -I../contourlines_GL
+C_FLAGS = -fPIC -g -c $(INC) -DGLFW_INCLUDE_GLEXT -DGLFW_INCLUDE_GLCOREARB
+
+LINK = g++ -fPIC -g
+LOCAL_UTIL_LIBRARIES = ../lib/libcryph.so ../lib/libglsl.so ../lib/libmvc.so
+OGL_LIBRARIES = -L/usr/local/lib -lglfw -framework OpenGL
+
+OBJS = main.o ContourGenerator.o
+
+main: $(OBJS) $(LOCAL_UTIL_LIBRARIES) ../contourlines_GL/libcontourlines_GL.a
+	$(LINK) -o main $(OBJS) $(LOCAL_UTIL_LIBRARIES) $(OGL_LIBRARIES) -L../contourlines_GL -lcontourlines_GL
+
+../contourlines_GL/libcontourlines_GL.a: ../contourlines_GL/ContourLineController.c++
+	(cd ../contourlines_GL; make -f MakefileMac)
+
+../lib/libcryph.so: ../cryphutil/AffPoint.h ../cryphutil/AffPoint.c++
+	(cd ../cryphutil; make)
+
+../lib/libglsl.so: ../glslutil/ShaderIF.h ../glslutil/ShaderIF.c++
+	(cd ../glslutil; make -f MakefileMac)
+
+../lib/libmvc.so: ../mvcutil/Controller.h ../mvcutil/Controller.c++ ../mvcutil/ModelView.h ../mvcutil/ModelView.c++
+	(cd ../mvcutil; make -f MakefileMac)
+
+main.o: ContourGenerator.h ../contourlines_GL/GL_LINES_Renderer.h main.c++
+	$(CPP) $(C_FLAGS) main.c++
+
+ContourGenerator.o: ContourGenerator.h ContourGenerator.c++
+	$(CPP) $(C_FLAGS) ContourGenerator.c++

@@ -1,0 +1,33 @@
+CPP = g++ -std=c++11
+INC = -I/usr/local/include -I../glslutil -I../cryphutil
+C_FLAGS = -fPIC -O -c $(INC) -DGLFW_INCLUDE_GLEXT -DGLFW_INCLUDE_GLCOREARB
+
+LINK = g++ -fPIC
+
+OBJS = Controller.o GLFWController.o ModelView.o BasicShape.o BasicShapeRenderer.o
+LOCAL_LIBS = ../lib/libcryph.so ../lib/libglsl.so
+
+libmvc.so: $(OBJS) $(LOCAL_LIBS)
+	$(LINK) -shared -o libmvc.so $(OBJS) $(LOCAL_LIBS) -L/usr/local/lib -lglfw -framework OpenGL
+	cp libmvc.so ../lib/
+
+../lib/libcryph.so: ../cryphutil/AffPoint.h ../cryphutil/AffPoint.c++
+	(cd ../cryphutil; make)
+
+../lib/libglsl.so: ../glslutil/ShaderIF.h ../glslutil/ShaderIF.c++
+	(cd ../glslutil; make -f MakefileMac)
+
+Controller.o: Controller.h Controller.c++
+	$(CPP) $(C_FLAGS) -DGLFW_INCLUDE_GLU Controller.c++
+
+GLFWController.o: GLFWController.h GLFWController.c++
+	$(CPP) $(C_FLAGS) GLFWController.c++
+
+ModelView.o: ModelView.h ModelView.c++
+	$(CPP) $(C_FLAGS) ModelView.c++
+
+BasicShape.o: BasicShape.h BasicShape.c++
+	$(CPP) $(C_FLAGS) BasicShape.c++
+
+BasicShapeRenderer.o: BasicShapeRenderer.h BasicShapeRenderer.c++
+	$(CPP) $(C_FLAGS) BasicShapeRenderer.c++

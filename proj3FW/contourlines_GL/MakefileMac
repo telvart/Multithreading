@@ -1,0 +1,16 @@
+CPP = g++ -std=c++11
+INC = -I/usr/local/include -I/usr/local/include/cryph -I../glslutil -I../mvcutil -I../contourlines_GPU
+C_FLAGS = -fPIC -g -c $(INC) -DGLFW_INCLUDE_GLEXT -DGLFW_INCLUDE_GLCOREARB
+
+LINK = ar -q -c
+
+OBJS = ContourLineController.o GL_LINES_Renderer.o
+
+libcontourlines_GL.a: $(OBJS)
+	$(LINK) libcontourlines_GL.a $(OBJS)
+
+ContourLineController.o: ContourLineController.h ContourLineController.c++
+	$(CPP) $(C_FLAGS) ContourLineController.c++
+
+GL_LINES_Renderer.o: GL_LINES_Renderer.h GL_LINES_Renderer.c++
+	$(CPP) $(C_FLAGS) GL_LINES_Renderer.c++
