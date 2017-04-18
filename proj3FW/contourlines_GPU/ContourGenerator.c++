@@ -57,7 +57,7 @@ int ContourGenerator::computeContourEdgesFor(float level, vec2*& lines)
 	// device buffer to prevent a memory leak.
 	// ... do it here ...
 
-	// return number if coordinate pairs in "lines":
+	// return number of coordinate pairs in "lines":
 	return numActualPoints;
 }
 
