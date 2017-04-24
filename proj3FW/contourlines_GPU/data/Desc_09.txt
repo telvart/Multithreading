@@ -1,3 +1,3 @@
 5 119.31242 127.31123 137.11234 145.31134 157.31222
 3751 6536
-/home/miller/public_html/Courses/690MulticoreAndGPGPU/Spring2017/Projects/Project3Data/ElevationData/KansasMissouri/9-1276600748.flt
+/Users/miller/public_html/Courses/690MulticoreAndGPGPU/Spring2017/Projects/Project3Data/ElevationData/KansasMissouri/9-1276600748.flt
