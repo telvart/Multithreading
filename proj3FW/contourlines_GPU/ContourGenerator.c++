@@ -65,12 +65,12 @@ int ContourGenerator::computeContourEdgesFor(float level, vec2*& lines)
 	lines[5][0] = (nColsOfVertices - 1) / (double)2;
 	lines[5][1] = nRowsOfVertices - 1;
 
-
-	for(int i=0; i<nRowsOfVertices * nColsOfVertices; i++)
-	{
-		std::cout<<vertexValues[i]<<" ";
-	}
-	std::cout<<"\n\n";
+	//TODO: THIS WORKS CORRECTLY
+	// for(int i=0; i<nRowsOfVertices * nColsOfVertices; i++)
+	// {
+	// 	std::cout<<vertexValues[i]<<" ";
+	// }
+	// std::cout<<"\n\n";
 
 	// for(int i=0; i<nRowsOfVertices; i++){
 	// 	for(int j=0; j<nColsOfVertices; j++){
