@@ -6,6 +6,7 @@
 
 #include <iostream>
 #include <fstream>
+#include "proj3CUDA.cu"
 
 typedef float vec2[2];
 
