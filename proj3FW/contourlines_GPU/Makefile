@@ -183,6 +183,7 @@ ALL_LDFLAGS += $(addprefix -Xlinker ,$(EXTRA_LDFLAGS))
 # Common includes and paths for CUDA
 INCLUDES  := -I../../common/inc
 LIBRARIES :=
+LIB_CUDA := -L$(CUDA_PATH)/lib64 -lcudart
 
 ################################################################################
 
@@ -218,10 +219,10 @@ LOCAL_UTIL_LIBRARIES = ../lib/libcryph.so ../lib/libglsl.so ../lib/libmvc.so ../
 GL_LIB_LOC = -L/usr/lib64/nvidia
 OGL_LIBRARIES = $(GL_LIB_LOC) -lglfw -lGLU -lGL
 
-OBJS = main.o ContourGenerator.o #proj3CUDA.o
+OBJS = main.o ContourGenerator.o proj3CUDA.o
 
 main: $(OBJS) $(LOCAL_UTIL_LIBRARIES)
-	$(LINK) -o main $(OBJS) $(LOCAL_UTIL_LIBRARIES) $(OGL_LIBRARIES)
+	$(LINK) -o main $(OBJS) $(LOCAL_UTIL_LIBRARIES) $(OGL_LIBRARIES) $(LIB_CUDA)
 
 ../contourlines_GL/contourlines_GL.so: ../contourlines_GL/ContourLineController.c++
 	(cd ../contourlines_GL; make)
@@ -241,5 +242,8 @@ main.o: ContourGenerator.h ../contourlines_GL/GL_LINES_Renderer.h main.c++
 ContourGenerator.o: ContourGenerator.h ContourGenerator.c++
 	$(CPP) $(C_FLAGS) ContourGenerator.c++
 
-#proj3CUDA.o: proj3CUDA.cu
-#	nvcc -arch=sm_35 -rdc=true -c proj3CUDA.cu
+proj3CUDA.o: proj3CUDA.cu
+	$(NVCC) $(INCLUDES) $(ALL_CCFLAGS) $(GENCODE_FLAGS) -o $@ -c $<
+
+clean:
+	rm -f *.o main
