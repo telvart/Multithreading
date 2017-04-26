@@ -1,6 +1,7 @@
 
 #include <stdio.h>
 #include <cuda.h>
+#include "proj3CUDA.h"
 
 __global__ void hello(){
   printf("Hello, CUDA!\n");
@@ -8,6 +9,6 @@ __global__ void hello(){
 
 void run()
 {
-  hello<<<1,10>>>();
+  hello<<<1,1>>>();
   cudaThreadSynchronize();
 }
