@@ -35,7 +35,7 @@ ContourGenerator::~ContourGenerator()
 int ContourGenerator::computeContourEdgesFor(float level, vec2*& lines)
 {
 	// Fire a kernel to determine expected number of edges at the given "level'
-	int numExpectedEdges = 2;//launchCountKernel(vertexValues, nRowsOfVertices * nColsOfVertices);
+	int numExpectedEdges = launchCountKernel(vertexValues, nRowsOfVertices, nColsOfVertices, level);
 
 	// Create space for the line end points on the device
 	int numExpectedPoints = 2 * numExpectedEdges; // each edge is: (x,y), (x,y)
@@ -59,7 +59,7 @@ int ContourGenerator::computeContourEdgesFor(float level, vec2*& lines)
 	lines[3][1] = 0.0;
 
 	//run();
-	queryDevice();
+	//queryDevice();
 
 	int row = 2;
 	int col = 3;
