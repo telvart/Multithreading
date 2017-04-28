@@ -79,13 +79,11 @@ __global__ void countKernel(float* vertexes, int numRows, int numCols, int* expe
 
 __global__ void computeKernel(float* vertexes, int numRows, int numCols, int level, int* locCount, int* edgeCount, vec2* edgeBuf)
 {
-
   int x = (blockIdx.x * blockDim.x) + threadIdx.x;
   int y = (blockIdx.y * blockDim.y) + threadIdx.y;
   int i = y * gridDim.x * blockDim.x + x;
   int myRow = floorf(i/numCols);
   int myCol = i%numCols;
-
 
   if( (i < (numRows*numCols)) && (myRow < numCols-1) && (myCol < numRows -1))
   {
@@ -96,24 +94,44 @@ __global__ void computeKernel(float* vertexes, int numRows, int numCols, int lev
       float bLeft = vertexes[i+numRows];
       //int bRight = i + numRows + 1;
       float bRight = vertexes[i + numRows + 1];
+      int myLoc = atomicAdd(locCount, 2);
+      atomicAdd(edgeCount, 1);
 
-      int myLoc = atomicAdd(locCount, 4);
-      //atomicAdd(edgeCount, 1);
-      *edgeCount = 3;
-      edgeBuf[0][0] = 0;
-      edgeBuf[0][1] = 0;
-      edgeBuf[1][0] = 3;
-      edgeBuf[1][1] = 3;
+      int myX = i % numCols;
+      int myY = i / numRows;
+      printf("My x: %i, My Y: %i\n", myX, myY);
+      //*edgeCount = 2;
 
-      edgeBuf[2][0] = 0;
-      edgeBuf[2][1] = 3;
-      edgeBuf[3][0] = 3;
-      edgeBuf[3][1] = 0;
+      printf("MyLoc: %i\n", myLoc);
+      //printf("X:%i Y:%i\n", x, y);
 
-      edgeBuf[4][0] = 1.5;
-      edgeBuf[4][1] = 0;
-      edgeBuf[5][0] = 1.5;
-      edgeBuf[5][1] = 3;
+      //NOTE MARK VALUES AS EITHER INSIDE OR OUTSIDE OF THE CONTOUR
+
+
+      edgeBuf[myLoc][0] = 0;
+      edgeBuf[myLoc][1] = 0;
+      edgeBuf[myLoc+1][0] = (float)myX;
+      edgeBuf[myLoc+1][1] = (float)myY;
+
+      // edgeBuf[myLoc+2][0] = 0;
+      // edgeBuf[myLoc+2][1] = 0;
+      // edgeBuf[myLoc+3][0] = 0;
+      // edgeBuf[myLoc+3][1] = 0;
+
+      // edgeBuf[0][0] = 0;
+      // edgeBuf[0][1] = 0;
+      // edgeBuf[1][0] = 3;
+      // edgeBuf[1][1] = 3;
+
+      // edgeBuf[2][0] = 0;
+      // edgeBuf[2][1] = 3;
+      // edgeBuf[3][0] = 3;
+      // edgeBuf[3][1] = 0;
+      //
+      // edgeBuf[4][0] = 1.5;
+      // edgeBuf[4][1] = 0;
+      // edgeBuf[5][0] = 1.5;
+      // edgeBuf[5][1] = 3;
 
       //printf("X: %.1f Y: %.1f\n", edgeBuf[0][0], edgeBuf[0][1]);
     // for(int i=0; i<numRows*numCols; i++)
