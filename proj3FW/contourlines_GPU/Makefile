@@ -183,6 +183,7 @@ ALL_LDFLAGS += $(addprefix -Xlinker ,$(EXTRA_LDFLAGS))
 # Common includes and paths for CUDA
 INCLUDES  := -I../../common/inc
 LIBRARIES :=
+
 LIB_CUDA := -L$(CUDA_PATH)/lib64 -lcudart
 
 ################################################################################
