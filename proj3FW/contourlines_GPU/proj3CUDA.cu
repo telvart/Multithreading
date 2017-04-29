@@ -36,16 +36,12 @@ __global__ void countKernel(float* vertexes, int numRows, int numCols, int* expe
 
    if( (i < (numRows*numCols)) && (myRow < numCols-1) && (myCol < numRows -1))
    {
-     int localCount = 0;
-     //int tLeft = i;
      float tLeft = vertexes[i];
-     //int tRight = i+1;
      float tRight = vertexes[i+1];
-     //int bLeft = i + numRows;
      float bLeft = vertexes[i+numRows];
-     //int bRight = i + numRows + 1;
      float bRight = vertexes[i + numRows + 1];
 
+     int localCount = 0;
      int numAbove = 0;
      int numBelow = 0;
 
@@ -73,9 +69,12 @@ __global__ void countKernel(float* vertexes, int numRows, int numCols, int* expe
     //  if ((level > tLeft && level < bLeft) && (level > tRight && level < bRight)){
     //    localCount++;
     //  }
+     //atomicAdd(expectedCount, 2);
      atomicAdd(expectedCount, localCount);
    }
 }
+
+
 
 __global__ void computeKernel(float* vertexes, int numRows, int numCols, int level, int* locCount, int* edgeCount, vec2* edgeBuf)
 {
@@ -88,67 +87,194 @@ __global__ void computeKernel(float* vertexes, int numRows, int numCols, int lev
   if( (i < (numRows*numCols)) && (myRow < numCols-1) && (myCol < numRows -1))
   {
       float tLeft = vertexes[i];
-      //int tRight = i+1;
       float tRight = vertexes[i+1];
-      //int bLeft = i + numRows;
       float bLeft = vertexes[i+numRows];
-      //int bRight = i + numRows + 1;
       float bRight = vertexes[i + numRows + 1];
-      int myLoc = atomicAdd(locCount, 2);
-      atomicAdd(edgeCount, 1);
 
-      int myX = i % numCols;
-      int myY = i / numRows;
-      printf("My x: %i, My Y: %i\n", myX, myY);
-      //*edgeCount = 2;
+      // if(numAbove == 1 || numBelow == 1 || numAbove == numBelow)
+      // {
+        int myLoc;
+        int numPoints = 0;
+        vec2 oneEdge[2];
+        //vec2 point1, point2;
+        //float ratio;
+         //if(numAbove != numBelow){
+          // if(numAbove == 1 || numBelow == 1){
+       float ratio;
+       if((tLeft > 0 && tRight > 0) && ((level > tLeft && level < tRight) || (level < tLeft && level > tRight))){
+         oneEdge[numPoints][0] = myCol + ((fabsf(level - tLeft)) / (fabsf(tLeft - tRight)));
+         oneEdge[numPoints][1] = myRow + 1;
+         numPoints++;
+         //printf("Point (%.1f, %.1f)\n", oneEdge[numPoints-1][0], oneEdge[numPoints-1][1]);
+       }
+       if((tLeft > 0 && bLeft > 0) && ((level < tLeft && level > bLeft) || (level > tLeft && level < bLeft))){
+         oneEdge[numPoints][0] = myCol;
+         oneEdge[numPoints][1] = myRow + ((fabsf(level - tLeft)) / (fabsf(tLeft - bLeft)));
+         numPoints++;
+      //   printf("Point (%.1f, %.1f)\n", oneEdge[numPoints-1][0], oneEdge[numPoints-1][1]);
+       }
+       if((bLeft > 0 && bRight > 0) && ((level > bLeft && level < bRight) || (level < bLeft && level > bRight))){
+         oneEdge[numPoints][0] = myCol + ((fabsf(level - bLeft)) / (fabsf(bLeft - bRight)));
+         oneEdge[numPoints][1] = myRow;
+         numPoints++;
+        // printf("Point (%.1f, %.1f)\n", oneEdge[numPoints-1][0], oneEdge[numPoints-1][1]);
+       }
+       if((tRight > 0 && bRight > 0) && ((level < tRight && level > bRight) || (level > tRight && level < bRight))){
+         oneEdge[numPoints][0] = myCol+1;
+         oneEdge[numPoints][1] = myRow + ((fabsf(level - bRight)) / (fabsf(bRight - tRight)));
+         numPoints++;
+        // printf("Point (%.1f, %.1f)\n", oneEdge[numPoints-1][0], oneEdge[numPoints-1][1]);
+       }
 
-      printf("MyLoc: %i\n", myLoc);
-      //printf("X:%i Y:%i\n", x, y);
 
-      //NOTE MARK VALUES AS EITHER INSIDE OR OUTSIDE OF THE CONTOUR
+       if(numPoints == 2){
+
+         //NOTE :'( sad day
+         myLoc = atomicAdd(locCount, 2);
+         atomicAdd(edgeCount, 1);
+         edgeBuf[myLoc][0] = oneEdge[0][0];
+         edgeBuf[myLoc][1] = oneEdge[0][1];
+         edgeBuf[myLoc+1][0] = oneEdge[1][0];
+         edgeBuf[myLoc+1][1] = oneEdge[1][1];
+
+        // printf("Point1: (%.1f, %.1f) -- Point2: (%.1f, %.1f)\n", oneEdge[0][0], oneEdge[0][1], oneEdge[1][0], oneEdge[1][1]);
+       }
+       else if(numPoints == 4){
+
+         //NOTE ambiguous case
+        // printf("4\n");
+       }
+
+        //     if(tLeft > level){
+        //       ratio = ((level - bLeft) / (tLeft - bLeft));
+        //       point1[0] = (float)myCol;
+        //       point1[1] = (float)myRow - ratio + 1;
+        //       ratio = ((level - tRight) / (tLeft - tRight));
+        //       point2[0] = (float)myCol + ratio;
+        //       point2[1] = (float)myRow + 1;
+        //     }
+        //     else if(tRight > level){
+        //       ratio = ((level - bRight) / (tRight - bRight));
+        //       point1[0] = (float)myCol + 1;
+        //       point1[1] = (float)myRow - ratio + 1;
+        //       ratio = ((level - tLeft) / (tRight - tLeft));
+        //       point2[0] = (float)myCol - ratio + 1;
+        //       point2[1] = (float)myRow + 1;
+        //     }
+        //     else if (bLeft > level) {
+        //       ratio = ((level - tLeft) / (bLeft - tLeft));
+        //       point1[0] = (float)myCol;
+        //       point1[1] = (float)myRow + ratio;
+        //       ratio = ((level - bRight) / (bLeft - bRight));
+        //       point2[0] = (float)myCol + ratio;
+        //       point2[1] = (float)myRow;
+        //     }
+        //     else if (bRight > level){
+        //       ratio = ((level - tRight) / (bRight - tRight));
+        //       point1[0] = (float)myCol + 1;
+        //       point1[1] = (float)myRow + ratio;
+        //       ratio = ((level - bLeft) / (bRight - bLeft));
+        //       point2[0] = (float)myCol - ratio + 1;
+        //       point2[1] = (float)myRow;
+        //     }
+        //     //printf("Ratio: %.1f\n", ratio);
+        //   //  printf("Point1: (%.1f, %.1f) -- Point2: (%.1f, %.1f)\n", point1[0], point1[1], point2[0], point1[1]);
+        //     //printf("Point2: (%.1f, %.1f)\n", point2[0], point1[2]);
+        //     myLoc = atomicAdd(locCount, 2);
+        //     atomicAdd(edgeCount, 1);
+        //
+        //     edgeBuf[myLoc][0] = point1[0];
+        //     edgeBuf[myLoc][1] = point1[1];
+        //     edgeBuf[myLoc+1][0] = point2[0];
+        //     edgeBuf[myLoc+1][1] = point2[1];
+        //   }
+        //   else if(numBelow == 1){
+        //     if(tLeft < level){
+        //       ratio = ((level - tLeft) / (tRight - tLeft));
+        //       point1[0] = (float)myCol + ratio;
+        //       point1[1] = (float)myRow + 1;
+        //       ratio = ((level - tLeft) / (bLeft - tLeft));
+        //       point2[0] = (float)myCol;
+        //       point2[1] = (float)myRow - ratio + 1;
+        //     }
+        //     else if(tRight < level){
+        //       ratio = ((level - tRight) / (tRight - tLeft));
+        //       point1[0] = (float)myCol - ratio + 1;
+        //       point1[1] = (float)myRow + 1;
+        //       ratio = ((level - tRight) / (bRight - tRight));
+        //       point2[0] = (float)myCol + 1;
+        //       point2[1] = (float)myRow - ratio + 1;
+        //     }
+        //     else if(bLeft < level){
+        //       ratio = ((level - bLeft) / (tLeft - bLeft));
+        //       point1[0] = (float)myCol;
+        //       point1[1] = (float)myRow + ratio;
+        //       ratio = ((level - bLeft) / (bRight - bLeft));
+        //       point2[0] = (float)myCol + ratio;
+        //       point2[1] = (float)myRow;
+        //     }
+        //     else if(bRight < level){
+        //       ratio = ((level - bRight) / (bLeft - bRight));
+        //       point1[0] = (float)myCol - ratio + 1;
+        //       point1[1] = (float)myRow;
+        //       ratio = ((level - bRight) / (tRight - bRight));
+        //       point2[0] = (float)myCol + 1;
+        //       point2[1] = (float)myRow + ratio;
+        //     }
+        //
+        //     //printf("Point1: (%.1f, %.1f) -- Point2: (%.1f, %.1f)\n", point1[0], point1[1], point2[0], point1[1]);
+        //     //if(point1[1] == 60.0){printf("FLAG\n");}
+        //
+        //     myLoc = atomicAdd(locCount, 2);
+        //     atomicAdd(edgeCount, 1);
+        //
+        //     edgeBuf[myLoc][0] = point1[0];
+        //     edgeBuf[myLoc][1] = point1[1];
+        //     edgeBuf[myLoc+1][0] = point2[0];
+        //     edgeBuf[myLoc+1][1] = point2[1];
+        //   }
+        //
+         //}
+        // else
+        // {
+        //   // myLoc = atomicAdd(locCount, 4);
+        //   // atomicAdd(edgeCount, 2);
+        //   // edgeBuf[myLoc][0] = (float)myCol;
+        //   // edgeBuf[myLoc][1] = (float)myRow;
+        //   // edgeBuf[myLoc+1][0] = (float)myCol+1;
+        //   // edgeBuf[myLoc+1][1] = (float)myRow+1;
+        //   //
+        //   // edgeBuf[myLoc+2][0] = (float)myCol;
+        //   // edgeBuf[myLoc+2][1] = (float)myRow+1;
+        //   // edgeBuf[myLoc+3][0] = (float)myCol+1;
+        //   // edgeBuf[myLoc+3][1] = (float)myRow;
+        // }
 
 
-      edgeBuf[myLoc][0] = 0;
-      edgeBuf[myLoc][1] = 0;
-      edgeBuf[myLoc+1][0] = (float)myX;
-      edgeBuf[myLoc+1][1] = (float)myY;
+        /*
+        TL myCol, myRow+1
+        TR myCol+1, myRow+1
+        BL myCol, myRow
+        BR myCol+1, myRow
+        */
 
-      // edgeBuf[myLoc+2][0] = 0;
-      // edgeBuf[myLoc+2][1] = 0;
-      // edgeBuf[myLoc+3][0] = 0;
-      // edgeBuf[myLoc+3][1] = 0;
+        //printf("TL = (%i, %i) TR = (%i, %i) BL = (%i, %i) BR = (%i, %i)\n",
+        // myCol, myRow+1, myCol+1, myRow+1, myCol, myRow, myCol+1, myRow);
 
-      // edgeBuf[0][0] = 0;
-      // edgeBuf[0][1] = 0;
-      // edgeBuf[1][0] = 3;
-      // edgeBuf[1][1] = 3;
+        //printf("My x: %i, My Y: %i\n", myRow, myCol);
+        //*edgeCount = 2;
 
-      // edgeBuf[2][0] = 0;
-      // edgeBuf[2][1] = 3;
-      // edgeBuf[3][0] = 3;
-      // edgeBuf[3][1] = 0;
-      //
-      // edgeBuf[4][0] = 1.5;
-      // edgeBuf[4][1] = 0;
-      // edgeBuf[5][0] = 1.5;
-      // edgeBuf[5][1] = 3;
+        //NOTE MARK VALUES AS EITHER INSIDE OR OUTSIDE OF THE CONTOUR
 
-      //printf("X: %.1f Y: %.1f\n", edgeBuf[0][0], edgeBuf[0][1]);
-    // for(int i=0; i<numRows*numCols; i++)
-    // {
-    //   printf("%.1f ", vertexes[i]);
-    // }
-    // printf("\n");
+      //}
+      //printf("Edge added: (%i, %i) -> (%i, %i)\n", myCol, myRow, myCol+1, myRow+1);
   }
 }
-
-
 
 int launchComputeKernel(float* vertexes, int numRows, int numCols,
    float level, int expectedEdges, vec2* buf)
 {
 
-  //std::cout<<buf[0][0]<<" "<<buf[0][1];
   cudaDeviceProp p;
   cudaGetDeviceProperties(&p, 0);
   float* d_vertexes;
@@ -161,19 +287,19 @@ int launchComputeKernel(float* vertexes, int numRows, int numCols,
 
   cudaMalloc(&d_vertexes, size);
   cudaMalloc(&d_edgeCount, sizeof(int));
-  cudaMalloc(&d_locCounter, sizeof(int)); //allocate device memory for vertexes and counters
-  cudaMalloc(&d_buffer, expectedEdges * sizeof(vec2));
+  cudaMalloc(&d_locCounter, sizeof(int));
+  cudaMalloc(&d_buffer, expectedEdges * 2 * sizeof(vec2)); //allocate device memory for vertexes and counters
 
   cudaMemcpy(d_vertexes, vertexes, size, cudaMemcpyHostToDevice);
   cudaMemcpy(d_edgeCount, &temp, sizeof(int), cudaMemcpyHostToDevice);
-  cudaMemcpy(d_locCounter, &temp, sizeof(int), cudaMemcpyHostToDevice); //
-  cudaMemcpy(d_buffer, buf, expectedEdges * sizeof(vec2), cudaMemcpyHostToDevice);
+  cudaMemcpy(d_locCounter, &temp, sizeof(int), cudaMemcpyHostToDevice); //initialize the device data
+  //cudaMemcpy(d_buffer, buf, expectedEdges * 2 * sizeof(vec2), cudaMemcpyHostToDevice);
 
   int warpSize = p.warpSize;
   int maxWarpsinBlock = p.maxThreadsPerBlock / warpSize; //determine #warps in one block
 
-  int gridX = (int)(ceil((numRows)/warpSize)) + 1;
-  int gridY = (int)ceil((numCols)/maxWarpsinBlock) + 1;
+  int gridX = (int)(ceil((numCols)/warpSize)) + 1;
+  int gridY = (int)ceil((numRows)/maxWarpsinBlock) + 1;
 
   dim3 block(warpSize, maxWarpsinBlock);
   dim3 gridDim(gridX, gridY); //launching dimensions
@@ -182,14 +308,14 @@ int launchComputeKernel(float* vertexes, int numRows, int numCols,
   cudaThreadSynchronize();
 
   cudaMemcpy(&h_edgeCount, d_edgeCount, sizeof(int), cudaMemcpyDeviceToHost);
-  cudaMemcpy(buf, d_buffer, expectedEdges * sizeof(vec2), cudaMemcpyDeviceToHost);
+  cudaMemcpy(buf, d_buffer, (h_edgeCount * 2) * sizeof(vec2), cudaMemcpyDeviceToHost); // copy back the endpoints and edge count
 
   cudaFree(d_vertexes);
   cudaFree(d_edgeCount);
   cudaFree(d_locCounter);
-  cudaFree(d_buffer);
+  cudaFree(d_buffer); // free device memory
 
-  std::cout<<h_edgeCount<<" \n";
+  //std::cout<<h_edgeCount<<" \n";
 
   return h_edgeCount;
 }
@@ -214,8 +340,8 @@ int launchCountKernel(float* h_vertexes, int numRows, int numCols, float level)
   int warpSize = p.warpSize;
   int maxWarpsinBlock = p.maxThreadsPerBlock / warpSize; //determine #warps in one block
 
-  int gridX = (int)(ceil((numRows)/warpSize)) + 1;
-  int gridY = (int)ceil((numCols)/maxWarpsinBlock) + 1;
+  int gridX = (int)(ceil((numCols)/warpSize)) + 1;
+  int gridY = (int)ceil((numRows)/maxWarpsinBlock) + 1;
 
   dim3 block(warpSize, maxWarpsinBlock);
   dim3 gridDim(gridX, gridY); //launching dimensions
